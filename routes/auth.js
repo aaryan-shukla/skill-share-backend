@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { db, auth } = require("../config/firebase");
-
+const bcrypt = require("bcrypt");
 router.post("/register/mentor", async (req, res, next) => {
   try {
     const { email, password, name, phoneNumber, photoUrl, address } = req.body;
@@ -18,7 +18,7 @@ router.post("/register/mentor", async (req, res, next) => {
       password,
       displayName: name,
     });
-
+    const hashedPassword = await bcrypt.hash(password, 10);
     await db
       .collection("mentors")
       .doc(email)
@@ -26,6 +26,7 @@ router.post("/register/mentor", async (req, res, next) => {
         id: userRecord.uid,
         name,
         email,
+        hashedPassword,
         phoneNumber,
         photoUrl: photoUrl || null,
         address: address || null,
@@ -59,7 +60,7 @@ router.post("/register/learner", async (req, res, next) => {
       password,
       displayName: name,
     });
-
+    const hashedPassword = await bcrypt.hash(password, 10);
     await db
       .collection("learners")
       .doc(email)
@@ -67,6 +68,7 @@ router.post("/register/learner", async (req, res, next) => {
         id: userRecord.uid,
         name,
         email,
+        hashedPassword,
         phoneNumber,
         photoUrl: photoUrl || null,
         address: address || null,
@@ -86,13 +88,27 @@ router.post("/register/learner", async (req, res, next) => {
 
 router.post("/login/mentor", async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const { email, password } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
     }
 
     const userRecord = await auth.getUserByEmail(email);
+    const userDoc = await db.collection("mentors").doc(userRecord.email).get();
+
+    if (!userDoc.exists) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    const { hashedPassword } = userDoc.data();
+
+    const isPasswordValid = await bcrypt.compare(password, hashedPassword);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
     const customToken = await auth.createCustomToken(userRecord.uid);
 
     res.json({
@@ -114,14 +130,26 @@ router.post("/login/mentor", async (req, res, next) => {
 });
 router.post("/login/learner", async (req, res, next) => {
   try {
-    const { email } = req.body;
+    const { email, password } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
     }
 
     const userRecord = await auth.getUserByEmail(email);
-    const customToken = await auth.createCustomToken(userRecord.uid);
+    const userDoc = await db.collection("learners").doc(userRecord.email).get();
+
+    if (!userDoc.exists) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    const { hashedPassword } = userDoc.data();
+
+    const isPasswordValid = await bcrypt.compare(password, hashedPassword);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
 
     res.json({
       token: customToken,
