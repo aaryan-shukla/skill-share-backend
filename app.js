@@ -5,9 +5,33 @@ const authRoutes = require("./routes/auth");
 const updateRoutes = require("./routes/updateDetails");
 const courseRoutes = require("./routes/courses");
 const app = express();
-
-app.use(cors());
+app.use((req, res, next) => {
+  console.log("Incoming request:", {
+    method: req.method,
+    path: req.path,
+    body: req.body,
+    params: req.params,
+    query: req.query,
+    headers: req.headers,
+  });
+  next();
+});
+app.use(
+  cors({
+    origin: "http://localhost:3000", // your Next.js frontend URL
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use((err, req, res, next) => {
+  console.error("Global error handler:", err);
+  res.status(500).json({
+    error: "Internal Server Error",
+    message: err.message,
+  });
+});
 
 app.use("/api", authRoutes);
 app.use("/api", updateRoutes);
