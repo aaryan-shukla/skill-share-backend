@@ -95,28 +95,39 @@ router.post("/login/mentor", async (req, res, next) => {
     }
 
     const userRecord = await auth.getUserByEmail(email);
+
     const userDoc = await db.collection("mentors").doc(userRecord.email).get();
 
     if (!userDoc.exists) {
       return res.status(401).json({ error: "User not found" });
     }
-
-    const { hashedPassword } = userDoc.data();
+    const userData = userDoc.data();
+    const { hashedPassword, name, photoUrl, phoneNumber, address, role } =
+      userData;
 
     const isPasswordValid = await bcrypt.compare(password, hashedPassword);
-
     if (!isPasswordValid) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
-
+    const getDirectDriveLink = (driveLink) => {
+      const match = driveLink.match(/\/d\/(.+?)\//);
+      return match
+        ? `https://drive.google.com/thumbnail?id=${match[1]}`
+        : driveLink;
+    };
     const customToken = await auth.createCustomToken(userRecord.uid);
-
     res.json({
       token: customToken,
       user: {
-        uid: userRecord.uid,
+        id: userRecord.uid,
         email: userRecord.email,
-        displayName: userRecord.displayName,
+        name: name || "",
+        photoUrl: getDirectDriveLink(photoUrl),
+        phoneNumber: phoneNumber || "",
+        address: address || "",
+        role: role || "",
+        createdAt: userData.createdAt || "",
+        updatedAt: userData.updatedAt || "",
       },
     });
   } catch (error) {
@@ -128,6 +139,7 @@ router.post("/login/mentor", async (req, res, next) => {
     next(error);
   }
 });
+
 router.post("/login/learner", async (req, res, next) => {
   try {
     const { email, password } = req.body;
