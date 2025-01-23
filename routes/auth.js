@@ -208,10 +208,7 @@ router.put("/updateUser/:id", async (req, res, next) => {
 
     const mentorsRef = db.collection("mentors");
     const snapshot = await mentorsRef.get();
-    console.log(
-      "Available documents:",
-      snapshot.docs.map((doc) => doc.id)
-    );
+
     const userDoc = await mentorsRef.doc(id).get();
 
     if (!userDoc.exists) {
