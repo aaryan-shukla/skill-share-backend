@@ -4,6 +4,7 @@ require("dotenv").config();
 const authRoutes = require("./routes/auth");
 const updateRoutes = require("./routes/updateDetails");
 const courseRoutes = require("./routes/courses");
+const mentorshipRoutes = require("./routes/mentorships");
 const app = express();
 app.use((req, res, next) => {
   console.log("Incoming request:", {
@@ -36,6 +37,7 @@ app.use((err, req, res, next) => {
 app.use("/api", authRoutes);
 app.use("/api", updateRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api", mentorshipRoutes);
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
