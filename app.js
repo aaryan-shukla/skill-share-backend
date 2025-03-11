@@ -19,7 +19,7 @@ app.use((req, res, next) => {
 });
 app.use(
   cors({
-    origin: "http://localhost:3000", // your Next.js frontend URL
+    origin: "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,

@@ -2,13 +2,12 @@ const express = require("express");
 const router = express.Router();
 const { db, auth } = require("../config/firebase");
 
-router.put("/update/mentor", async (req, res, next) => {
+router.put("/update/mentor/:email", async (req, res, next) => {
   try {
+    const { email } = req.params;
     const {
-      email,
       name,
       phoneNumber,
-      photoUrl,
       address,
       birthday,
       summary,
@@ -29,7 +28,7 @@ router.put("/update/mentor", async (req, res, next) => {
 
     if (name) updateData.name = name;
     if (phoneNumber) updateData.phoneNumber = phoneNumber;
-    if (photoUrl) updateData.photoUrl = photoUrl;
+
     if (address) updateData.address = address;
     if (birthday) updateData.birthday = birthday;
     if (summary) updateData.summary = summary;
@@ -49,7 +48,10 @@ router.put("/update/mentor", async (req, res, next) => {
 
     res.status(200).json({
       message: "Mentor details updated successfully",
-      updatedFields: Object.keys(updateData),
+      updatedFields: Object.keys(updateData).filter(
+        (key) => key !== "updatedAt"
+      ),
+      email: email,
     });
   } catch (error) {
     next(error);
